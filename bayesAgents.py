@@ -96,8 +96,24 @@ def constructBayesNet(gameState):
     variableDomainsDict = {}
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-
+    for housePos in gameState.getPossibleHouses():
+            for obsPos in gameState.getHouseWalls(housePos):
+                obsVar = OBS_VAR_TEMPLATE % obsPos
+                obsVars.append(obsVar)
+                edges.append((FOOD_HOUSE_VAR, obsVar))
+                edges.append((GHOST_HOUSE_VAR, obsVar))
+    edges.append((X_POS_VAR, FOOD_HOUSE_VAR))
+    edges.append((Y_POS_VAR, FOOD_HOUSE_VAR))
+    edges.append((X_POS_VAR, GHOST_HOUSE_VAR))
+    edges.append((Y_POS_VAR, GHOST_HOUSE_VAR))
+    
+    # variableDomainsDict['Raining']  = ['yes', 'no']
+    variableDomainsDict[X_POS_VAR] = [FOOD_LEFT_VAL, GHOST_LEFT_VAL]
+    variableDomainsDict[Y_POS_VAR] = [BOTH_TOP_VAL, BOTH_BOTTOM_VAL, LEFT_TOP_VAL, LEFT_BOTTOM_VAL]
+    variableDomainsDict[FOOD_HOUSE_VAR] = [(FOOD_LEFT_VAL, BOTH_TOP_VAL), (FOOD_LEFT_VAL, BOTH_BOTTOM_VAL), (FOOD_LEFT_VAL, LEFT_TOP_VAL), (FOOD_LEFT_VAL, LEFT_BOTTOM_VAL)
+        , (GHOST_LEFT_VAL, BOTH_TOP_VAL), (GHOST_LEFT_VAL, BOTH_BOTTOM_VAL), (GHOST_LEFT_VAL, LEFT_TOP_VAL), (GHOST_LEFT_VAL, LEFT_BOTTOM_VAL)]
+    variableDomainsDict[OBS_VAR_TEMPLATE] = [BLUE_OBS_VAL, RED_OBS_VAL, NO_OBS_VAL]
+    # print "@@@@EDGES", edges
     variables = [X_POS_VAR, Y_POS_VAR] + HOUSE_VARS + obsVars
     net = bn.constructEmptyBayesNet(variables, edges, variableDomainsDict)
     return net, obsVars

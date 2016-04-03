@@ -101,7 +101,52 @@ def joinFactors(factors):
 
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # print "@@@@@@factorlength ", len(factors)
+    # print "@@@@@@@factor 1", factors[0]
+    # print "@@@@@@@factor 2", factors[1]
+    # print "@@@@@@@variableDomainsDict ", Factor.variableDomainsDict(factors[0]), len(Factor.variableDomainsDict(factors[0]))
+    # print "@@@@@@@conditionedVariables ", Factor.conditionedVariables(factors[0])
+    # print "@@@@@@@getAllPossibleAssignmentDicts ", Factor.getAllPossibleAssignmentDicts(factors[0])
+    # print "@@@@@@@oneassignmentdict ", Factor.getAllPossibleAssignmentDicts(factors[0])[0], Factor.getAllPossibleAssignmentDicts(factors[0])[0].get("W")
+    # print "@@@@@@@getProbability ", Factor.getProbability(factors[0], Factor.getAllPossibleAssignmentDicts(factors[0])[0])
+    #Factor.getAllPossibleAssignmentDicts(factors[0])
+    joinedConditionedVariables = set()
+    joinedUnconditionedVariables = set()
+    for factor in factors:
+        for condVar in factor.conditionedVariables():
+            joinedConditionedVariables.add(condVar)
+        for uncondVar in factor.unconditionedVariables():
+            joinedUnconditionedVariables.add(uncondVar)
+        # joinedConditionedVariables.union(factor.conditionedVariables())
+        # joinedUnconditionedVariables.union(factor.unconditionedVariables())
+        # print "@@@@@factor.unconditionedVariables() ", factor.unconditionedVariables(), type(factor.unconditionedVariables())
+        # print "@@@@joinedConditionedVariables ", joinedConditionedVariables
+        # print "@@@@joinedUnconditionedVariables ", joinedUnconditionedVariables
+        # print "@@@@factor.conditionedVariables() ", factor.conditionedVariables()
+        # print "@@@@factor.unconditionedVariables() ", factor.unconditionedVariables()
+
+    # joinedUnconditionedVariables.remove(eliminationVariable)
+    # reducedFactor = Factor(reducedUnconditionedVariables, factor.conditionedVariables(), factor.variableDomainsDict())
+    for uncondVar in joinedUnconditionedVariables:
+        if uncondVar in joinedConditionedVariables:
+            joinedConditionedVariables.remove(uncondVar)
+    # print "@@@@@@joinedUnconditionedVariables ", joinedUnconditionedVariables
+    # print "@@@@@@joinedConditionedVariables ", joinedConditionedVariables
+    joinedFactor = Factor(joinedUnconditionedVariables, joinedConditionedVariables, factors[0].variableDomainsDict())
+    # print "@@@@joinedFactor.unconditionedVariables() ", joinedFactor.unconditionedVariables()
+    # print "@@@@joinedFactor.conditionedVariables() ", joinedFactor.conditionedVariables()
+    for joinedAssignment in joinedFactor.getAllPossibleAssignmentDicts():
+        # print "@@@@joinedAssignment ", joinedAssignment
+        factorAssignmentProduct = 1
+        for factor in factors:
+            # print "probability of ", joinedAssignment, Factor.getProbability(factor, joinedAssignment)
+            factorAssignmentProduct = factorAssignmentProduct * Factor.getProbability(factor, joinedAssignment)
+        Factor.setProbability(joinedFactor, joinedAssignment, factorAssignmentProduct)
+
+
+
+    return joinedFactor
+
 
 
 def eliminateWithCallTracking(callTrackingList=None):
@@ -150,7 +195,21 @@ def eliminateWithCallTracking(callTrackingList=None):
                     "unconditionedVariables: " + str(factor.unconditionedVariables()))
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # Note: "reduced" indicates its the unconditioned variables minus the elimVar, and "full" means its all the starting unconditioned variables
+        reducedUnconditionedVariables = factor.unconditionedVariables()
+        reducedUnconditionedVariables.remove(eliminationVariable)
+        reducedFactor = Factor(reducedUnconditionedVariables, factor.conditionedVariables(), factor.variableDomainsDict())
+
+        for reducedAssignment in reducedFactor.getAllPossibleAssignmentDicts():
+            prob = 0
+            for elimVarVal in factor.variableDomainsDict()[eliminationVariable]:
+                fullAssignment = reducedAssignment
+                fullAssignment[eliminationVariable] = elimVarVal
+
+                prob = prob + factor.getProbability(fullAssignment)
+            reducedFactor.setProbability(reducedAssignment, prob)
+
+        return reducedFactor
 
     return eliminate
 
@@ -205,5 +264,32 @@ def normalize(factor):
                             str(factor))
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    initSumProbs = 0.0 #initial sum of all entry probs
+    for assignment in factor.getAllPossibleAssignmentDicts():
+        initSumProbs = initSumProbs + factor.getProbability(assignment)
+
+
+    listOfOneEntryVars = [] # list of unconditioned variables with exactly 1 entry in their domains
+    for variable in factor.unconditionedVariables():
+        if len(factor.variableDomainsDict()[variable]) == 1:
+            listOfOneEntryVars.append(variable)
+
+    newUnconditionedVars = set()
+    newConditionedVars = set()
+    for variable in factor.conditionedVariables():
+        newConditionedVars.add(variable)
+    for variable in listOfOneEntryVars:
+        newConditionedVars.add(variable)
+    for variable in factor.unconditionedVariables():
+        if variable not in listOfOneEntryVars:
+            newUnconditionedVars.add(variable)
+
+    normalizedFactor = Factor(newUnconditionedVars, newConditionedVars, factor.variableDomainsDict())
+
+
+    for assignment in normalizedFactor.getAllPossibleAssignmentDicts():
+        normalizedProb = factor.getProbability(assignment) / initSumProbs
+        normalizedFactor.setProbability(assignment, normalizedProb)
+
+    return normalizedFactor
 
